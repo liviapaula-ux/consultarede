@@ -190,5 +190,101 @@
         // Inicializar estados
         fetchEstados();
     </script>
+<!-- Formulário Toqan -->
+<div id="toqan-form" style="max-width: 600px; margin: 50px auto; padding: 20px; border: 1px solid #ddd; border-radius: 8px;">
+  <h2>🏥 Consultar Planos de Saúde</h2>
+  
+  <textarea 
+    id="mensagem" 
+    placeholder="Ex: Preciso de um plano de saúde para minha família de 4 pessoas..." 
+    rows="5" 
+    style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px;"
+  ></textarea>
+  
+  <button 
+    id="enviar" 
+    style="width: 100%; padding: 12px; margin-top: 10px; background: #0070f3; color: white; border: none; border-radius: 4px; font-size: 16px; cursor: pointer; font-weight: bold;"
+  >
+    Enviar Consulta
+  </button>
+  
+  <div id="loading" style="display: none; margin-top: 20px; text-align: center; color: #0070f3;">
+    ⏳ Processando sua consulta...
+  </div>
+  
+  <div id="resposta" style="margin-top: 20px; padding: 15px; background: #f0f9ff; border-left: 4px solid #0070f3; border-radius: 4px; display: none;">
+    <h3 style="margin-top: 0;">✅ Resposta:</h3>
+    <pre id="resposta-texto" style="white-space: pre-wrap; font-family: Arial; font-size: 14px;"></pre>
+  </div>
+  
+  <div id="erro" style="margin-top: 20px; padding: 15px; background: #ffebee; border-left: 4px solid #f44336; border-radius: 4px; color: #c62828; display: none;">
+    <h3 style="margin-top: 0;">❌ Erro:</h3>
+    <p id="erro-texto"></p>
+  </div>
+</div>
+
+<script>
+// URL da sua função no Vercel
+const API_URL = 'https://consultarede.vercel.app/api/toqan';
+
+document.getElementById('enviar').addEventListener('click', async function() {
+  // Pega a mensagem digitada
+  const mensagem = document.getElementById('mensagem').value;
+  
+  // Valida se tem mensagem
+  if (!mensagem.trim()) {
+    alert('⚠️ Por favor, digite uma mensagem!');
+    return;
+  }
+  
+  // Esconde mensagens anteriores
+  document.getElementById('resposta').style.display = 'none';
+  document.getElementById('erro').style.display = 'none';
+  document.getElementById('loading').style.display = 'block';
+  
+  // Desabilita o botão
+  const botao = document.getElementById('enviar');
+  botao.disabled = true;
+  botao.style.opacity = '0.6';
+  botao.style.cursor = 'not-allowed';
+  
+  try {
+    // Envia para sua função no Vercel
+    const response = await fetch(API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ message: mensagem })
+    });
+    
+    const data = await response.json();
+    
+    // Esconde loading
+    document.getElementById('loading').style.display = 'none';
+    
+    if (response.ok) {
+      // Sucesso! Mostra a resposta
+      document.getElementById('resposta-texto').textContent = JSON.stringify(data, null, 2);
+      document.getElementById('resposta').style.display = 'block';
+    } else {
+      // Erro da API
+      document.getElementById('erro-texto').textContent = data.error || 'Erro desconhecido';
+      document.getElementById('erro').style.display = 'block';
+    }
+    
+  } catch (error) {
+    // Erro de conexão
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('erro-texto').textContent = 'Erro ao conectar: ' + error.message;
+    document.getElementById('erro').style.display = 'block';
+  }
+  
+  // Restaura o botão
+  botao.disabled = false;
+  botao.style.opacity = '1';
+  botao.style.cursor = 'pointer';
+});
+</script>
 </body>
 </html>
