@@ -13,8 +13,8 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Chama a API do Toqan
-    const response = await fetch('https://api.toqan.ai/api/create_conversation', {
+    // PASSO 1: Criar a conversa
+    const createResponse = await fetch('https://api.toqan.ai/api/create_conversation', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -26,18 +26,69 @@ export default async function handler(req, res) {
       })
     });
 
-    // Verifica se deu erro
-    if (!response.ok) {
-      const errorData = await response.text();
-      return res.status(response.status).json({ 
-        error: 'Erro ao comunicar com Toqan',
+    if (!createResponse.ok) {
+      const errorData = await createResponse.text();
+      return res.status(createResponse.status).json({ 
+        error: 'Erro ao criar conversa',
         details: errorData 
       });
     }
 
-    // Retorna a resposta do Toqan
-    const data = await response.json();
-    return res.status(200).json(data);
+    const createData = await createResponse.json();
+    const { conversation_id, request_id } = createData;
+
+    // PASSO 2: Buscar a resposta (com retry)
+    let attempts = 0;
+    const maxAttempts = 30; // Tenta por até 30 segundos
+    let answerData = null;
+
+    while (attempts < maxAttempts) {
+      // Aguarda 1 segundo entre tentativas
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      const answerResponse = await fetch(
+        `https://api.toqan.ai/api/get_answer?conversation_id=${conversation_id}&request_id=${request_id}`,
+        {
+          method: 'GET',
+          headers: {
+            'Accept': '*/*',
+            'X-Api-Key': process.env.TOQAN_API_KEY
+          }
+        }
+      );
+
+      if (answerResponse.ok) {
+        answerData = await answerResponse.json();
+        
+        // Verifica se a resposta está pronta
+        if (answerData.status === 'completed' && answerData.answer) {
+          break;
+        } else if (answerData.status === 'failed') {
+          return res.status(500).json({ 
+            error: 'Falha ao processar resposta',
+            details: answerData 
+          });
+        }
+      }
+      
+      attempts++;
+    }
+
+    if (!answerData || !answerData.answer) {
+      return res.status(408).json({ 
+        error: 'Timeout: resposta não recebida a tempo',
+        details: answerData 
+      });
+    }
+
+    // PASSO 3: Retornar a resposta formatada
+    return res.status(200).json({
+      success: true,
+      message: answerData.answer,
+      conversation_id: conversation_id,
+      request_id: request_id,
+      status: answerData.status
+    });
 
   } catch (error) {
     return res.status(500).json({ 
