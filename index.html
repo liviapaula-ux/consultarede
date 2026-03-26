@@ -138,7 +138,7 @@
         <div id="loading" class="hidden mt-6 text-center">
             <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-red-600"></div>
             <p class="mt-4 text-gray-600 font-semibold">Consultando agente Toqan...</p>
-            <p class="mt-2 text-sm text-gray-500">Analisando as redes credenciadas. Isso pode levar alguns segundos...</p>
+            <p class="mt-2 text-sm text-gray-500">Processando planilhas das operadoras. Isso pode levar até 1 minuto...</p>
         </div>
 
         <!-- Resposta do Agente -->
@@ -305,16 +305,18 @@
                 planos.push(`Unimed ${planoUnimedSelect.value}`);
             }
 
-            // Monta mensagem otimizada para o agente
-            let mensagem = `Olá! Gostaria de comparar a rede credenciada dos seguintes planos: ${planos.join(' e ')}.\n\n`;
-            mensagem += `Cidade: ${cidade} - ${estado}\n`;
-            mensagem += `Busco informações sobre: ${tipoBusca}`;
+            // Monta mensagem DIRETA e OBJETIVA para o agente
+            let mensagem = `Cidade: ${cidade} - ${estado}
+Planos: ${planos.join(' e ')}
+Buscar: ${tipoBusca}`;
             
             if (tipoBuscaSelect.value === 'especialidades' && especialidadeInput.value.trim()) {
-                mensagem += ` - Especialidade: ${especialidadeInput.value.trim()}`;
+                mensagem += `\nEspecialidade: ${especialidadeInput.value.trim()}`;
             }
 
-            mensagem += `\n\nPor favor, considere também um raio de 50km da cidade informada.`;
+            mensagem += `\nRaio: 50km
+
+IMPORTANTE: Apresente APENAS os dados comparativos finais (números e listas), SEM explicações introdutórias ou frases como "Vou analisar" ou "Deixe-me verificar". Vá direto aos resultados.`;
 
             try {
                 // Chama a API do Vercel
