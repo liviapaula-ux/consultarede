@@ -4,50 +4,46 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Método não permitido' });
   }
 
-  // Pega a mensagem enviada do frontend
-  const { message } = req.body;
-
-  // Valida se a mensagem foi enviada
-  if (!message) {
-    return res.status(400).json({ error: 'Mensagem é obrigatória' });
-  }
+  const { message, conversation_id, request_id, action } = req.body;
 
   try {
-    // PASSO 1: Criar a conversa
-    const createResponse = await fetch('https://api.toqan.ai/api/create_conversation', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': '*/*',
-        'X-Api-Key': process.env.TOQAN_API_KEY
-      },
-      body: JSON.stringify({
-        user_message: message
-      })
-    });
+    // AÇÃO 1: Criar nova conversa
+    if (action === 'create' || (message && !conversation_id)) {
+      if (!message) {
+        return res.status(400).json({ error: 'Mensagem é obrigatória' });
+      }
 
-    if (!createResponse.ok) {
-      const errorData = await createResponse.text();
-      return res.status(createResponse.status).json({ 
-        error: 'Erro ao criar conversa',
-        details: errorData 
+      const createResponse = await fetch('https://api.toqan.ai/api/create_conversation', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': '*/*',
+          'X-Api-Key': process.env.TOQAN_API_KEY
+        },
+        body: JSON.stringify({
+          user_message: message
+        })
+      });
+
+      if (!createResponse.ok) {
+        const errorData = await createResponse.text();
+        return res.status(createResponse.status).json({ 
+          error: 'Erro ao criar conversa',
+          details: errorData 
+        });
+      }
+
+      const createData = await createResponse.json();
+      return res.status(200).json({
+        success: true,
+        action: 'created',
+        conversation_id: createData.conversation_id,
+        request_id: createData.request_id
       });
     }
 
-    const createData = await createResponse.json();
-    const { conversation_id, request_id } = createData;
-
-    // PASSO 2: Aguardar processamento inicial (10 segundos)
-    await new Promise(resolve => setTimeout(resolve, 10000));
-
-    // PASSO 3: Buscar a resposta com timeout longo
-    let attempts = 0;
-    const maxAttempts = 120; // 120 segundos = 2 minutos
-    let answerData = null;
-    let lastAnswerLength = 0;
-    let stableCount = 0;
-
-    while (attempts < maxAttempts) {
+    // AÇÃO 2: Buscar resposta de conversa existente
+    if (action === 'get_answer' && conversation_id && request_id) {
       const answerResponse = await fetch(
         `https://api.toqan.ai/api/get_answer?conversation_id=${conversation_id}&request_id=${request_id}`,
         {
@@ -59,93 +55,76 @@ export default async function handler(req, res) {
         }
       );
 
-      if (answerResponse.ok) {
-        answerData = await answerResponse.json();
-        
-        if (answerData.answer) {
-          const currentLength = answerData.answer.length;
-          
-          // Verifica se a resposta estabilizou
-          if (currentLength === lastAnswerLength && currentLength > 100) {
-            stableCount++;
-            if (stableCount >= 5) {
-              // Resposta estável por 5 segundos
-              break;
-            }
-          } else {
-            stableCount = 0;
-            lastAnswerLength = currentLength;
-          }
-          
-          // Se status completed
-          if (answerData.status === 'completed') {
-            // Aguarda mais 5 segundos para garantir
-            await new Promise(resolve => setTimeout(resolve, 5000));
-            
-            // Busca uma última vez
-            const finalResponse = await fetch(
-              `https://api.toqan.ai/api/get_answer?conversation_id=${conversation_id}&request_id=${request_id}`,
-              {
-                method: 'GET',
-                headers: {
-                  'Accept': '*/*',
-                  'X-Api-Key': process.env.TOQAN_API_KEY
-                }
-              }
-            );
-            
-            if (finalResponse.ok) {
-              answerData = await finalResponse.json();
-            }
-            break;
-          }
-        }
-        
-        if (answerData.status === 'failed') {
-          return res.status(500).json({ 
-            error: 'Falha ao processar resposta',
-            details: answerData 
-          });
-        }
+      if (!answerResponse.ok) {
+        const errorData = await answerResponse.text();
+        return res.status(answerResponse.status).json({ 
+          error: 'Erro ao buscar resposta',
+          details: errorData 
+        });
       }
-      
-      // Aguarda 1 segundo entre tentativas
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      attempts++;
-    }
 
-    // VALIDAÇÃO: Verifica se recebeu resposta
-    if (!answerData) {
-      return res.status(408).json({ 
-        error: 'Timeout: nenhuma resposta recebida',
-        conversation_id: conversation_id,
-        request_id: request_id
-      });
-    }
+      const answerData = await answerResponse.json();
 
-    // DEBUG: Retorna dados brutos se answer estiver vazio
-    if (!answerData.answer || answerData.answer.trim().length === 0) {
+      // Se ainda está processando
+      if (answerData.status === 'pending' || !answerData.answer) {
+        return res.status(200).json({
+          success: false,
+          status: 'pending',
+          message: 'Ainda processando...'
+        });
+      }
+
+      // Se falhou
+      if (answerData.status === 'failed') {
+        return res.status(500).json({
+          success: false,
+          status: 'failed',
+          error: 'Falha ao processar',
+          details: answerData
+        });
+      }
+
+      // Se completou
+      if (answerData.status === 'completed' && answerData.answer) {
+        let respostaLimpa = answerData.answer;
+        
+        // Remove tags <think>
+        respostaLimpa = respostaLimpa.replace(/<think>[\s\S]*?<\/think>/gi, '');
+        
+        // Remove frases introdutórias se a resposta for longa
+        if (respostaLimpa.length > 300) {
+          respostaLimpa = respostaLimpa.replace(/^(Perfeito!|Vou analisar|Deixe-me|Aguarde).*?\n/gi, '');
+          respostaLimpa = respostaLimpa.replace(/Deixe-me (verificar|consultar|analisar).*?\n/gi, '');
+        }
+        
+        respostaLimpa = respostaLimpa.trim();
+
+        return res.status(200).json({
+          success: true,
+          status: 'completed',
+          message: respostaLimpa,
+          original_length: answerData.answer.length,
+          final_length: respostaLimpa.length
+        });
+      }
+
+      // Status desconhecido
       return res.status(200).json({
         success: false,
-        error: 'Resposta vazia do agente',
-        debug: {
-          status: answerData.status,
-          raw_data: answerData,
-          conversation_id: conversation_id,
-          request_id: request_id
-        }
+        status: answerData.status || 'unknown',
+        raw_data: answerData
       });
     }
 
-    // PASSO 4: Processar a resposta
-    let respostaFinal = answerData.answer;
-    
-    // Remove tags <think> se existirem
-    const respostaSemThink = respostaFinal.replace(/<think>[\s\S]*?<\/think>/gi, '');
-    
-    // Se após remover <think> sobrou conteúdo, usa a versão limpa
-    if (respostaSemThink.trim().length > 50) {
-      respostaFinal = respostaSemThink;
-    }
-    
-    // Remove frases introdutórias
+    // Ação inválida
+    return res.status(400).json({ 
+      error: 'Ação inválida. Use action: "create" ou "get_answer"' 
+    });
+
+  } catch (error) {
+    return res.status(500).json({ 
+      error: 'Erro interno',
+      details: error.message
+    });
+  }
+}
