@@ -37,15 +37,17 @@ export default async function handler(req, res) {
     const createData = await createResponse.json();
     const { conversation_id, request_id } = createData;
 
-    // PASSO 2: Buscar a resposta (com retry)
+    // PASSO 2: Aguardar processamento inicial (5 segundos)
+    await new Promise(resolve => setTimeout(resolve, 5000));
+
+    // PASSO 3: Buscar a resposta (com retry e validação)
     let attempts = 0;
-    const maxAttempts = 30; // Tenta por até 30 segundos
+    const maxAttempts = 60; // Aumenta para 60 tentativas (60 segundos)
     let answerData = null;
+    let previousAnswerLength = 0;
+    let stableCount = 0;
 
     while (attempts < maxAttempts) {
-      // Aguarda 1 segundo entre tentativas
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
       const answerResponse = await fetch(
         `https://api.toqan.ai/api/get_answer?conversation_id=${conversation_id}&request_id=${request_id}`,
         {
@@ -60,49 +62,27 @@ export default async function handler(req, res) {
       if (answerResponse.ok) {
         answerData = await answerResponse.json();
         
-        // Verifica se a resposta está pronta
-        if (answerData.status === 'completed' && answerData.answer) {
-          break;
-        } else if (answerData.status === 'failed') {
-          return res.status(500).json({ 
-            error: 'Falha ao processar resposta',
-            details: answerData 
-          });
+        // Verifica se tem resposta
+        if (answerData.answer) {
+          const currentLength = answerData.answer.length;
+          
+          // Se a resposta parou de crescer por 3 verificações consecutivas, considera completa
+          if (currentLength === previousAnswerLength) {
+            stableCount++;
+            if (stableCount >= 3 && currentLength > 100) {
+              // Resposta estável e com conteúdo suficiente
+              break;
+            }
+          } else {
+            stableCount = 0;
+            previousAnswerLength = currentLength;
+          }
+          
+          // Se status for completed E resposta tiver conteúdo substancial
+          if (answerData.status === 'completed' && currentLength > 200) {
+            break;
+          }
         }
-      }
-      
-      attempts++;
-    }
-
-    if (!answerData || !answerData.answer) {
-      return res.status(408).json({ 
-        error: 'Timeout: resposta não recebida a tempo',
-        details: answerData 
-      });
-    }
-
-    // PASSO 3: Limpar a resposta (remover reasoning)
-    let respostaLimpa = answerData.answer;
-    
-    // Remove tags <think>...</think> (reasoning)
-    respostaLimpa = respostaLimpa.replace(/<think>[\s\S]*?<\/think>/gi, '');
-    
-    // Remove espaços extras no início
-    respostaLimpa = respostaLimpa.trim();
-
-    // PASSO 4: Retornar a resposta formatada
-    return res.status(200).json({
-      success: true,
-      message: respostaLimpa,
-      conversation_id: conversation_id,
-      request_id: request_id,
-      status: answerData.status
-    });
-
-  } catch (error) {
-    return res.status(500).json({ 
-      error: 'Erro interno',
-      details: error.message 
-    });
-  }
-}
+        
+        if (answerData.status === 'failed') {
+          return res.status
