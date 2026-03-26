@@ -1,265 +1,45 @@
-<!DOCTYPE html>
-<html lang="pt-br">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pesquisa de Redes de Saúde</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
-    <style>
-        body {
-            font-family: 'Montserrat', sans-serif;
-            background-color: #f7f7f7;
-        }
-        .ifood-red {
-            background-color: #EA1D2C;
-        }
-        .ifood-red-text {
-            color: #EA1D2C;
-        }
-        .card-shadow {
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
-        }
-        select:focus, input:focus {
-            outline: none;
-            border-color: #EA1D2C;
-            ring: 1px;
-            ring-color: #EA1D2C;
-        }
-    </style>
-</head>
-<body class="min-h-screen flex flex-col items-center justify-center p-4">
+#OBJETIVO:
+Você é um analista comparativo de redes de atendimento de planos de saúde. Os usuários solicitarão informações sobre suas cidades e regiões para entender melhor os dois planos: Forneça dados claros e objetivos, permitindo que os usuários tomem uma decisão informada sem orientar sobre qual plano escolher.
 
-    <!-- Header / Logo Area -->
-    <div class="mb-8 text-center">
-        <div class="ifood-red text-white p-4 rounded-full inline-block mb-4 shadow-lg">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-        </div>
-        <h1 class="text-3xl font-bold text-gray-800">Busca de Rede Credenciada</h1>
-        <p class="text-gray-500 mt-2">Encontre o atendimento ideal para o seu plano</p>
-    </div>
+#CONTEXTO:
+as pessoas estão sendo convidadas a escolher entre os dois planos, e para que escolham da melhor forma, a análise de rede é o principal motivador
 
-    <!-- Form Card -->
-    <div class="bg-white w-full max-w-lg rounded-3xl p-8 card-shadow border border-gray-100">
-        <form id="searchForm" class="space-y-6">
-            
-            <!-- Operadora -->
-            <div>
-                <label class="block text-sm font-semibold text-gray-700 mb-2">Qual a operadora?</label>
-                <select id="operadora" class="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl text-gray-700 appearance-none cursor-pointer hover:bg-white transition-colors" required>
-                    <option value="" disabled selected>Selecione a operadora</option>
-                    <option value="Bradesco">Bradesco Saúde</option>
-                    <option value="Unimed">Unimed</option>
-                </select>
-            </div>
+#AÇÕES:
+Comparar as redes considerando as cidades e incluir raio de 50km da cidade que a pessoa pediu
 
-            <!-- Plano -->
-            <div>
-                <label class="block text-sm font-semibold text-gray-700 mb-2">Qual o plano?</label>
-                <select id="plano" class="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl text-gray-700 appearance-none cursor-pointer hover:bg-white transition-colors disabled:opacity-50" disabled required>
-                    <option value="" disabled selected>Selecione a operadora primeiro</option>
-                </select>
-            </div>
+#NORMAS:
+1 - Sempre pedir para a pessoa especificar a cidade que está buscando
+2 - Perguntar quais dos planos a pessoa quer comparar (Bradesco: Efetivo, Ideal, Nacional ou Nacional  Plus, Premium) ou (Unimed CNU: Estilo, Exclusivo, Absoluto ou Superior)
+3 - sempre perguntar se a pessoa está buscando hospitais, laboratórios ou especialidades médicas
+4 - Nunca buscar na web, apenas nas planilhas que estão no agente
+5 - Além da cidade da pessoa, estender para um raio de 50km
+6 - Listar apenas o nome do hospital, especialidade médica e profissionais ou laboratório, de acordo com o que a pessoa solicitou e apenas uma vez cada - mesmo que esteja duplicado na planilha
+7 - OBRIGATÓRIO: Incluir sempre ao final da resposta a nota de rodapé com os links das operadoras:
+8 - em comparativos numéricos, cada nome de médico, hospital, clínica deve ser contado apenas uma vez
 
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <!-- Estado -->
-                <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-2">Estado</label>
-                    <select id="estado" class="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl text-gray-700 appearance-none cursor-pointer hover:bg-white transition-colors" required>
-                        <option value="" disabled selected>Carregando...</option>
-                    </select>
-                </div>
+"**ℹ️ Informação Importante:**
+As informações acima são baseadas em bases enviadas pelas operadoras e podem sofrer alterações sem prévio aviso. O resultado deve servir apenas como referência.
 
-                <!-- Cidade -->
-                <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-2">Cidade</label>
-                    <select id="cidade" class="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl text-gray-700 appearance-none cursor-pointer hover:bg-white transition-colors disabled:opacity-50" disabled required>
-                        <option value="" disabled selected>Selecione o estado</option>
-                    </select>
-                </div>
-            </div>
+Para ter acesso a base completa atualizada em tempo real, acesse os sites das operadoras:
+- **BRADESCO:** https://www.bradescoseguros.com.br/clientes/produtos/plano-saude/consulta-de-rede-referenciada
+- **UNIMED:** https://beneficiario.unimednacional.coop.br/guia-medico"
 
-            <!-- Botão Pesquisar -->
-            <button type="submit" class="w-full ifood-red text-white font-bold py-4 rounded-xl shadow-lg hover:opacity-90 transition-all transform active:scale-95 flex items-center justify-center gap-2">
-                <span>Pesquisar Agora</span>
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                    <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd" />
-                </svg>
-            </button>
-        </form>
+#EXEMPLO DE RESPOSTA:
+Na região de São Paulo:
+Unimed possui x hospitais
+Bradesco possui x hospitais
 
-        <!-- Loading State -->
-        <div id="loading" class="hidden mt-6 text-center">
-            <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-red-600"></div>
-            <p class="mt-4 text-gray-600 font-semibold">Consultando agente Toqan...</p>
-            <p class="mt-2 text-sm text-gray-500">Isso pode levar alguns segundos...</p>
-        </div>
+Unimed na região de São Paulo:
+1 - 
+2 - 
+3 - 
+4 - 
 
-        <!-- Resposta do Agente -->
-        <div id="resultado" class="hidden mt-6 p-6 bg-green-50 border-l-4 border-green-500 rounded-xl">
-            <h3 class="text-lg font-bold text-green-800 mb-3 flex items-center gap-2">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                Resultado da Consulta
-            </h3>
-            <div id="resultado-texto" class="text-gray-800 leading-relaxed whitespace-pre-wrap"></div>
-        </div>
+Bradesco na região de São Paulo:
+1 - 
+2 - 
+3 - 
+4 - 
 
-        <!-- Erro -->
-        <div id="erro" class="hidden mt-6 p-6 bg-red-50 border-l-4 border-red-500 rounded-xl">
-            <h3 class="text-lg font-bold text-red-800 mb-3 flex items-center gap-2">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                Erro na Consulta
-            </h3>
-            <p id="erro-texto" class="text-red-700"></p>
-        </div>
-    </div>
-
-    <!-- Footer Information -->
-    <p class="mt-8 text-sm text-gray-400">
-        Integrado com Agente Inteligente Toqan.ai
-    </p>
-
-    <script>
-        const operadoraSelect = document.getElementById('operadora');
-        const planoSelect = document.getElementById('plano');
-        const estadoSelect = document.getElementById('estado');
-        const cidadeSelect = document.getElementById('cidade');
-        const searchForm = document.getElementById('searchForm');
-        const loadingDiv = document.getElementById('loading');
-        const resultadoDiv = document.getElementById('resultado');
-        const resultadoTexto = document.getElementById('resultado-texto');
-        const erroDiv = document.getElementById('erro');
-        const erroTexto = document.getElementById('erro-texto');
-
-        const planosMap = {
-            'Bradesco': ['Efetivo', 'Ideal', 'Nacional', 'Nacional Plus', 'Premium'],
-            'Unimed': ['Estilo', 'Absoluto', 'Superior', 'Exclusivo']
-        };
-
-        // Lógica de Planos baseada na Operadora
-        operadoraSelect.addEventListener('change', function() {
-            const selected = this.value;
-            planoSelect.disabled = false;
-            planoSelect.innerHTML = '<option value="" disabled selected>Selecione o plano</option>';
-            
-            planosMap[selected].forEach(plano => {
-                const opt = document.createElement('option');
-                opt.value = plano;
-                opt.textContent = plano;
-                planoSelect.appendChild(opt);
-            });
-        });
-
-        // Buscar Estados Brasileiros (API IBGE)
-        async function fetchEstados() {
-            try {
-                const response = await fetch('https://servicodados.ibge.gov.br/api/v1/localidades/estados?orderBy=nome');
-                const estados = await response.json();
-                
-                estadoSelect.innerHTML = '<option value="" disabled selected>Selecione</option>';
-                estados.forEach(uf => {
-                    const opt = document.createElement('option');
-                    opt.value = uf.sigla;
-                    opt.textContent = uf.nome;
-                    estadoSelect.appendChild(opt);
-                });
-            } catch (error) {
-                console.error('Erro ao carregar estados', error);
-                estadoSelect.innerHTML = '<option value="" disabled selected>Erro ao carregar</option>';
-            }
-        }
-
-        // Buscar Cidades baseadas no Estado (API IBGE)
-        estadoSelect.addEventListener('change', async function() {
-            const uf = this.value;
-            cidadeSelect.disabled = true;
-            cidadeSelect.innerHTML = '<option value="" disabled selected>Carregando cidades...</option>';
-
-            try {
-                const response = await fetch(`https://servicodados.ibge.gov.br/api/v1/localidades/estados/${uf}/municipios?orderBy=nome`);
-                const cidades = await response.json();
-                
-                cidadeSelect.disabled = false;
-                cidadeSelect.innerHTML = '<option value="" disabled selected>Selecione a cidade</option>';
-                cidades.forEach(cidade => {
-                    const opt = document.createElement('option');
-                    opt.value = cidade.nome;
-                    opt.textContent = cidade.nome;
-                    cidadeSelect.appendChild(opt);
-                });
-            } catch (error) {
-                console.error('Erro ao carregar cidades', error);
-            }
-        });
-
-        // Ação de Pesquisa - USA A API TOQAN
-        searchForm.addEventListener('submit', async function(e) {
-            e.preventDefault();
-            
-            // Esconde resultados anteriores
-            resultadoDiv.classList.add('hidden');
-            erroDiv.classList.add('hidden');
-            loadingDiv.classList.remove('hidden');
-
-            const data = {
-                operadora: operadoraSelect.value,
-                plano: planoSelect.value,
-                estado: estadoSelect.options[estadoSelect.selectedIndex].text,
-                cidade: cidadeSelect.value
-            };
-
-            // Monta a mensagem para o agente
-            const mensagem = `Olá! Gostaria de pesquisar a rede credenciada do plano ${data.plano} da ${data.operadora} em ${data.cidade} - ${data.estado}.`;
-
-            try {
-                // Chama a API do Vercel
-                const response = await fetch('https://consultarede.vercel.app/api/toqan', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ message: mensagem })
-                });
-
-                const resultado = await response.json();
-
-                // Esconde loading
-                loadingDiv.classList.add('hidden');
-
-                if (response.ok && resultado.success) {
-                    // Mostra a resposta do agente
-                    resultadoTexto.textContent = resultado.message || 'Resposta recebida, mas sem conteúdo.';
-                    resultadoDiv.classList.remove('hidden');
-                    
-                    // Scroll suave até o resultado
-                    resultadoDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-                } else {
-                    // Erro da API
-                    let mensagemErro = resultado.error || 'Erro desconhecido ao consultar o agente.';
-                    if (resultado.details) {
-                        mensagemErro += '\n\nDetalhes: ' + (typeof resultado.details === 'string' ? resultado.details : JSON.stringify(resultado.details));
-                    }
-                    erroTexto.textContent = mensagemErro;
-                    erroDiv.classList.remove('hidden');
-                }
-
-            } catch (error) {
-                // Erro de conexão
-                loadingDiv.classList.add('hidden');
-                erroTexto.textContent = 'Erro ao conectar com o servidor: ' + error.message;
-                erroDiv.classList.remove('hidden');
-            }
-        });
-
-        // Inicializar estados
-        fetchEstados();
-    </script>
-
-</body>
-</html>
+#SAÍDAS
+Sempre consolidar as informações, sem dar sugestões de escolhas
