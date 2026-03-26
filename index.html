@@ -104,7 +104,7 @@
                 </svg>
                 Resultado da Consulta
             </h3>
-            <div id="resultado-texto" class="text-gray-800 whitespace-pre-wrap"></div>
+            <div id="resultado-texto" class="text-gray-800 leading-relaxed"></div>
         </div>
 
         <!-- Erro -->
@@ -232,8 +232,32 @@
                 loadingDiv.classList.add('hidden');
 
                 if (response.ok) {
-                    // Sucesso! Mostra a resposta
-                    resultadoTexto.textContent = JSON.stringify(resultado, null, 2);
+                    // Extrai a mensagem do agente de forma legível
+                    let mensagemFormatada = '';
+                    
+                    // Tenta diferentes possíveis estruturas de resposta
+                    if (resultado.agent_response && resultado.agent_response.message) {
+                        mensagemFormatada = resultado.agent_response.message;
+                    } else if (resultado.response && resultado.response.message) {
+                        mensagemFormatada = resultado.response.message;
+                    } else if (resultado.message) {
+                        mensagemFormatada = resultado.message;
+                    } else if (resultado.reply) {
+                        mensagemFormatada = resultado.reply;
+                    } else if (resultado.text) {
+                        mensagemFormatada = resultado.text;
+                    } else {
+                        // Se não encontrar nenhum campo conhecido, mostra o JSON completo formatado
+                        mensagemFormatada = '<pre style="font-size: 12px; overflow-x: auto;">' + JSON.stringify(resultado, null, 2) + '</pre>';
+                    }
+                    
+                    // Converte quebras de linha em <br> e mantém a formatação
+                    if (typeof mensagemFormatada === 'string' && !mensagemFormatada.includes('<pre>')) {
+                        resultadoTexto.innerHTML = mensagemFormatada.replace(/\n/g, '<br>');
+                    } else {
+                        resultadoTexto.innerHTML = mensagemFormatada;
+                    }
+                    
                     resultadoDiv.classList.remove('hidden');
                     
                     // Scroll suave até o resultado
