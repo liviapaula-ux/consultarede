@@ -89,4 +89,292 @@
                 <!-- Estado -->
                 <div>
                     <label class="block text-sm font-semibold text-gray-700 mb-2">Estado</label>
-                    <select id="estado" class="w
+                    <select id="estado" class="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl text-gray-700 appearance-none cursor-pointer hover:bg-white transition-colors" required>
+                        <option value="" disabled selected>Carregando...</option>
+                    </select>
+                </div>
+
+                <!-- Cidade -->
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-2">Cidade</label>
+                    <select id="cidade" class="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl text-gray-700 appearance-none cursor-pointer hover:bg-white transition-colors disabled:opacity-50" disabled required>
+                        <option value="" disabled selected>Selecione o estado</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Tipo de Busca -->
+            <div>
+                <label class="block text-sm font-semibold text-gray-700 mb-2">O que deseja buscar?</label>
+                <select id="tipo-busca" class="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl text-gray-700 appearance-none cursor-pointer hover:bg-white transition-colors" required>
+                    <option value="" disabled selected>Selecione o tipo de busca</option>
+                    <option value="hospitais">Hospitais</option>
+                    <option value="laboratorios">Laboratórios</option>
+                    <option value="especialidades">Especialidades Médicas</option>
+                </select>
+            </div>
+
+            <!-- Especialidade (Condicional) -->
+            <div id="campo-especialidade" class="hidden">
+                <label class="block text-sm font-semibold text-gray-700 mb-2">Qual especialidade médica?</label>
+                <input 
+                    type="text" 
+                    id="especialidade" 
+                    placeholder="Ex: Cardiologia, Ortopedia, Pediatria..." 
+                    class="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl text-gray-700 hover:bg-white transition-colors"
+                >
+            </div>
+
+            <!-- Botão Pesquisar -->
+            <button type="submit" class="w-full ifood-red text-white font-bold py-4 rounded-xl shadow-lg hover:opacity-90 transition-all transform active:scale-95 flex items-center justify-center gap-2">
+                <span>Comparar Redes</span>
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd" />
+                </svg>
+            </button>
+        </form>
+
+        <!-- Loading State -->
+        <div id="loading" class="hidden mt-6 text-center">
+            <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-red-600"></div>
+            <p class="mt-4 text-gray-600 font-semibold">Consultando agente Toqan...</p>
+            <p class="mt-2 text-sm text-gray-500">Processando planilhas das operadoras. Isso pode levar até 1 minuto...</p>
+        </div>
+
+        <!-- Resposta do Agente -->
+        <div id="resultado" class="hidden mt-6 p-6 bg-green-50 border-l-4 border-green-500 rounded-xl">
+            <h3 class="text-lg font-bold text-green-800 mb-3 flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                Comparativo de Rede Credenciada
+            </h3>
+            <div id="resultado-texto" class="text-gray-800 leading-relaxed" style="white-space: pre-wrap;"></div>
+        </div>
+
+        <!-- Erro -->
+        <div id="erro" class="hidden mt-6 p-6 bg-red-50 border-l-4 border-red-500 rounded-xl">
+            <h3 class="text-lg font-bold text-red-800 mb-3 flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                Erro na Consulta
+            </h3>
+            <p id="erro-texto" class="text-red-700 whitespace-pre-wrap"></p>
+        </div>
+    </div>
+
+    <!-- Footer Information -->
+    <div class="mt-8 text-center max-w-2xl">
+        <p class="text-sm text-gray-600 mb-3">
+            ℹ️ <strong>Informação Importante:</strong> As informações são baseadas em dados das operadoras e podem sofrer alterações sem prévio aviso.
+        </p>
+        <div class="flex flex-col md:flex-row gap-3 justify-center text-sm">
+            <a href="https://www.bradescoseguros.com.br/clientes/produtos/plano-saude/consulta-de-rede-referenciada" target="_blank" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                📋 Rede Bradesco Atualizada
+            </a>
+            <a href="https://beneficiario.unimednacional.coop.br/guia-medico" target="_blank" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
+                📋 Rede Unimed Atualizada
+            </a>
+        </div>
+        <p class="text-xs text-gray-400 mt-4">
+            Integrado com Agente Inteligente Toqan.ai
+        </p>
+    </div>
+
+    <script>
+        const opBradesco = document.getElementById('op-bradesco');
+        const opUnimed = document.getElementById('op-unimed');
+        const planosBradescoDiv = document.getElementById('planos-bradesco');
+        const planosUnimedDiv = document.getElementById('planos-unimed');
+        const planoBradescoSelect = document.getElementById('plano-bradesco');
+        const planoUnimedSelect = document.getElementById('plano-unimed');
+        const estadoSelect = document.getElementById('estado');
+        const cidadeSelect = document.getElementById('cidade');
+        const tipoBuscaSelect = document.getElementById('tipo-busca');
+        const campoEspecialidade = document.getElementById('campo-especialidade');
+        const especialidadeInput = document.getElementById('especialidade');
+        const searchForm = document.getElementById('searchForm');
+        const loadingDiv = document.getElementById('loading');
+        const resultadoDiv = document.getElementById('resultado');
+        const resultadoTexto = document.getElementById('resultado-texto');
+        const erroDiv = document.getElementById('erro');
+        const erroTexto = document.getElementById('erro-texto');
+
+        // Mostra/esconde campos de planos baseado nas operadoras selecionadas
+        opBradesco.addEventListener('change', function() {
+            planosBradescoDiv.classList.toggle('hidden', !this.checked);
+            if (!this.checked) planoBradescoSelect.value = '';
+        });
+
+        opUnimed.addEventListener('change', function() {
+            planosUnimedDiv.classList.toggle('hidden', !this.checked);
+            if (!this.checked) planoUnimedSelect.value = '';
+        });
+
+        // Mostra/esconde campo de especialidade
+        tipoBuscaSelect.addEventListener('change', function() {
+            const isEspecialidade = this.value === 'especialidades';
+            campoEspecialidade.classList.toggle('hidden', !isEspecialidade);
+            if (!isEspecialidade) especialidadeInput.value = '';
+        });
+
+        // Buscar Estados Brasileiros (API IBGE)
+        async function fetchEstados() {
+            try {
+                const response = await fetch('https://servicodados.ibge.gov.br/api/v1/localidades/estados?orderBy=nome');
+                const estados = await response.json();
+                
+                estadoSelect.innerHTML = '<option value="" disabled selected>Selecione</option>';
+                estados.forEach(uf => {
+                    const opt = document.createElement('option');
+                    opt.value = uf.sigla;
+                    opt.textContent = uf.nome;
+                    estadoSelect.appendChild(opt);
+                });
+            } catch (error) {
+                console.error('Erro ao carregar estados', error);
+                estadoSelect.innerHTML = '<option value="" disabled selected>Erro ao carregar</option>';
+            }
+        }
+
+        // Buscar Cidades baseadas no Estado (API IBGE)
+        estadoSelect.addEventListener('change', async function() {
+            const uf = this.value;
+            cidadeSelect.disabled = true;
+            cidadeSelect.innerHTML = '<option value="" disabled selected>Carregando cidades...</option>';
+
+            try {
+                const response = await fetch(`https://servicodados.ibge.gov.br/api/v1/localidades/estados/${uf}/municipios?orderBy=nome`);
+                const cidades = await response.json();
+                
+                cidadeSelect.disabled = false;
+                cidadeSelect.innerHTML = '<option value="" disabled selected>Selecione a cidade</option>';
+                cidades.forEach(cidade => {
+                    const opt = document.createElement('option');
+                    opt.value = cidade.nome;
+                    opt.textContent = cidade.nome;
+                    cidadeSelect.appendChild(opt);
+                });
+            } catch (error) {
+                console.error('Erro ao carregar cidades', error);
+            }
+        });
+
+        // Ação de Pesquisa
+        searchForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            // Validações
+            if (!opBradesco.checked && !opUnimed.checked) {
+                alert('⚠️ Selecione pelo menos uma operadora para comparar!');
+                return;
+            }
+
+            if (opBradesco.checked && !planoBradescoSelect.value) {
+                alert('⚠️ Selecione o plano Bradesco!');
+                return;
+            }
+
+            if (opUnimed.checked && !planoUnimedSelect.value) {
+                alert('⚠️ Selecione o plano Unimed!');
+                return;
+            }
+
+            if (tipoBuscaSelect.value === 'especialidades' && !especialidadeInput.value.trim()) {
+                alert('⚠️ Especifique qual especialidade médica deseja buscar!');
+                return;
+            }
+
+            // Esconde resultados anteriores
+            resultadoDiv.classList.add('hidden');
+            erroDiv.classList.add('hidden');
+            loadingDiv.classList.remove('hidden');
+
+            // Monta dados da consulta
+            const cidade = cidadeSelect.value;
+            const estado = estadoSelect.options[estadoSelect.selectedIndex].text;
+            const tipoBusca = tipoBuscaSelect.options[tipoBuscaSelect.selectedIndex].text;
+            
+            // Monta lista de planos
+            let planos = [];
+            if (opBradesco.checked) {
+                planos.push(`Bradesco ${planoBradescoSelect.value}`);
+            }
+            if (opUnimed.checked) {
+                planos.push(`Unimed ${planoUnimedSelect.value}`);
+            }
+
+            // Monta mensagem DIRETA e OBJETIVA para o agente
+            let mensagem = `Cidade: ${cidade} - ${estado}
+Planos: ${planos.join(' e ')}
+Buscar: ${tipoBusca}`;
+            
+            if (tipoBuscaSelect.value === 'especialidades' && especialidadeInput.value.trim()) {
+                mensagem += `\nEspecialidade: ${especialidadeInput.value.trim()}`;
+            }
+
+            mensagem += `\nRaio: 50km
+
+IMPORTANTE: Apresente APENAS os dados comparativos finais (números e listas), SEM explicações introdutórias ou frases como "Vou analisar" ou "Deixe-me verificar". Vá direto aos resultados.`;
+
+            try {
+                // Chama a API do Vercel
+                const response = await fetch('https://consultarede.vercel.app/api/toqan', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ message: mensagem })
+                });
+
+                const resultado = await response.json();
+
+                // Esconde loading
+                loadingDiv.classList.add('hidden');
+
+                if (response.ok) {
+                    if (resultado.success && resultado.message) {
+                        // Sucesso com mensagem
+                        resultadoTexto.textContent = resultado.message;
+                        resultadoDiv.classList.remove('hidden');
+                        resultadoDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    } else if (resultado.debug) {
+                        // Resposta veio mas está vazia - mostra debug
+                        let debugInfo = '🔍 DEBUG - Resposta recebida mas vazia:\n\n';
+                        debugInfo += JSON.stringify(resultado.debug, null, 2);
+                        debugInfo += '\n\n⚠️ Por favor, copie estas informações e envie ao suporte.';
+                        resultadoTexto.textContent = debugInfo;
+                        resultadoDiv.classList.remove('hidden');
+                    } else {
+                        // Erro desconhecido
+                        erroTexto.textContent = resultado.error || 'Resposta vazia do agente';
+                        erroDiv.classList.remove('hidden');
+                    }
+                } else {
+                    // Erro da API
+                    let mensagemErro = resultado.error || 'Erro desconhecido ao consultar o agente.';
+                    if (resultado.details) {
+                        mensagemErro += '\n\nDetalhes: ' + (typeof resultado.details === 'string' ? resultado.details : JSON.stringify(resultado.details));
+                    }
+                    if (resultado.debug) {
+                        mensagemErro += '\n\nDebug: ' + JSON.stringify(resultado.debug, null, 2);
+                    }
+                    erroTexto.textContent = mensagemErro;
+                    erroDiv.classList.remove('hidden');
+                }
+
+            } catch (error) {
+                // Erro de conexão
+                loadingDiv.classList.add('hidden');
+                erroTexto.textContent = 'Erro ao conectar com o servidor: ' + error.message;
+                erroDiv.classList.remove('hidden');
+            }
+        });
+
+        // Inicializar estados
+        fetchEstados();
+    </script>
+
+</body>
+</html>
