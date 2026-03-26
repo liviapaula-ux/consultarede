@@ -79,4 +79,74 @@ export default async function handler(req, res) {
           
           // Se status completed E tem conteúdo com listas/dados
           if (answerData.status === 'completed' && 
-              (currentAnswer.includes('\n1 
+              (currentAnswer.includes('\n1 -') || currentAnswer.includes('possui') || currentAnswer.length > 500)) {
+            // Aguarda mais 5 segundos para garantir que está completo
+            await new Promise(resolve => setTimeout(resolve, 5000));
+            
+            // Busca novamente para pegar versão final
+            const finalResponse = await fetch(
+              `https://api.toqan.ai/api/get_answer?conversation_id=${conversation_id}&request_id=${request_id}`,
+              {
+                method: 'GET',
+                headers: {
+                  'Accept': '*/*',
+                  'X-Api-Key': process.env.TOQAN_API_KEY
+                }
+              }
+            );
+            
+            if (finalResponse.ok) {
+              answerData = await finalResponse.json();
+            }
+            break;
+          }
+        }
+        
+        if (answerData.status === 'failed') {
+          return res.status(500).json({ 
+            error: 'Falha ao processar resposta',
+            details: answerData 
+          });
+        }
+      }
+      
+      // Aguarda 1 segundo entre tentativas
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      attempts++;
+    }
+
+    if (!answerData || !answerData.answer) {
+      return res.status(408).json({ 
+        error: 'Timeout: resposta não recebida a tempo. O agente pode estar processando dados muito grandes.',
+        details: answerData 
+      });
+    }
+
+    // PASSO 4: Limpar a resposta
+    let respostaLimpa = answerData.answer;
+    
+    // Remove tags <think> (reasoning)
+    respostaLimpa = respostaLimpa.replace(/<think>[\s\S]*?<\/think>/gi, '');
+    
+    // Remove frases introdutórias comuns
+    respostaLimpa = respostaLimpa.replace(/^(Perfeito!|Vou analisar|Deixe-me|Aguarde).*?\.(\s|\n)/gi, '');
+    respostaLimpa = respostaLimpa.replace(/Deixe-me (verificar|consultar|analisar).*?(\n|\.)/gi, '');
+    
+    // Remove espaços extras
+    respostaLimpa = respostaLimpa.trim();
+
+    return res.status(200).json({
+      success: true,
+      message: respostaLimpa,
+      conversation_id: conversation_id,
+      request_id: request_id,
+      status: answerData.status
+    });
+
+  } catch (error) {
+    return res.status(500).json({ 
+      error: 'Erro interno',
+      details: error.message 
+    });
+  }
+}
