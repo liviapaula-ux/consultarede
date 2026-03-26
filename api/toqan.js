@@ -44,7 +44,7 @@ export default async function handler(req, res) {
     let attempts = 0;
     const maxAttempts = 120; // 120 segundos = 2 minutos
     let answerData = null;
-    let lastAnswer = '';
+    let lastAnswerLength = 0;
     let stableCount = 0;
 
     while (attempts < maxAttempts) {
@@ -63,10 +63,10 @@ export default async function handler(req, res) {
         answerData = await answerResponse.json();
         
         if (answerData.answer) {
-          const currentAnswer = answerData.answer;
+          const currentLength = answerData.answer.length;
           
-          // Verifica se a resposta estabilizou (não mudou por 5 segundos)
-          if (currentAnswer === lastAnswer && currentAnswer.length > 300) {
+          // Verifica se a resposta estabilizou
+          if (currentLength === lastAnswerLength && currentLength > 100) {
             stableCount++;
             if (stableCount >= 5) {
               // Resposta estável por 5 segundos
@@ -74,16 +74,15 @@ export default async function handler(req, res) {
             }
           } else {
             stableCount = 0;
-            lastAnswer = currentAnswer;
+            lastAnswerLength = currentLength;
           }
           
-          // Se status completed E tem conteúdo com listas/dados
-          if (answerData.status === 'completed' && 
-              (currentAnswer.includes('\n1 -') || currentAnswer.includes('possui') || currentAnswer.length > 500)) {
-            // Aguarda mais 5 segundos para garantir que está completo
+          // Se status completed
+          if (answerData.status === 'completed') {
+            // Aguarda mais 5 segundos para garantir
             await new Promise(resolve => setTimeout(resolve, 5000));
             
-            // Busca novamente para pegar versão final
+            // Busca uma última vez
             const finalResponse = await fetch(
               `https://api.toqan.ai/api/get_answer?conversation_id=${conversation_id}&request_id=${request_id}`,
               {
@@ -115,38 +114,38 @@ export default async function handler(req, res) {
       attempts++;
     }
 
-    if (!answerData || !answerData.answer) {
+    // VALIDAÇÃO: Verifica se recebeu resposta
+    if (!answerData) {
       return res.status(408).json({ 
-        error: 'Timeout: resposta não recebida a tempo. O agente pode estar processando dados muito grandes.',
-        details: answerData 
+        error: 'Timeout: nenhuma resposta recebida',
+        conversation_id: conversation_id,
+        request_id: request_id
       });
     }
 
-    // PASSO 4: Limpar a resposta
-    let respostaLimpa = answerData.answer;
-    
-    // Remove tags <think> (reasoning)
-    respostaLimpa = respostaLimpa.replace(/<think>[\s\S]*?<\/think>/gi, '');
-    
-    // Remove frases introdutórias comuns
-    respostaLimpa = respostaLimpa.replace(/^(Perfeito!|Vou analisar|Deixe-me|Aguarde).*?\.(\s|\n)/gi, '');
-    respostaLimpa = respostaLimpa.replace(/Deixe-me (verificar|consultar|analisar).*?(\n|\.)/gi, '');
-    
-    // Remove espaços extras
-    respostaLimpa = respostaLimpa.trim();
+    // DEBUG: Retorna dados brutos se answer estiver vazio
+    if (!answerData.answer || answerData.answer.trim().length === 0) {
+      return res.status(200).json({
+        success: false,
+        error: 'Resposta vazia do agente',
+        debug: {
+          status: answerData.status,
+          raw_data: answerData,
+          conversation_id: conversation_id,
+          request_id: request_id
+        }
+      });
+    }
 
-    return res.status(200).json({
-      success: true,
-      message: respostaLimpa,
-      conversation_id: conversation_id,
-      request_id: request_id,
-      status: answerData.status
-    });
-
-  } catch (error) {
-    return res.status(500).json({ 
-      error: 'Erro interno',
-      details: error.message 
-    });
-  }
-}
+    // PASSO 4: Processar a resposta
+    let respostaFinal = answerData.answer;
+    
+    // Remove tags <think> se existirem
+    const respostaSemThink = respostaFinal.replace(/<think>[\s\S]*?<\/think>/gi, '');
+    
+    // Se após remover <think> sobrou conteúdo, usa a versão limpa
+    if (respostaSemThink.trim().length > 50) {
+      respostaFinal = respostaSemThink;
+    }
+    
+    // Remove frases introdutórias
