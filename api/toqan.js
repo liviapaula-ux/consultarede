@@ -37,14 +37,14 @@ export default async function handler(req, res) {
     const createData = await createResponse.json();
     const { conversation_id, request_id } = createData;
 
-    // PASSO 2: Aguardar processamento inicial (5 segundos)
-    await new Promise(resolve => setTimeout(resolve, 5000));
+    // PASSO 2: Aguardar processamento inicial (10 segundos)
+    await new Promise(resolve => setTimeout(resolve, 10000));
 
-    // PASSO 3: Buscar a resposta (com retry e validação)
+    // PASSO 3: Buscar a resposta com timeout longo
     let attempts = 0;
-    const maxAttempts = 60; // Aumenta para 60 tentativas (60 segundos)
+    const maxAttempts = 120; // 120 segundos = 2 minutos
     let answerData = null;
-    let previousAnswerLength = 0;
+    let lastAnswer = '';
     let stableCount = 0;
 
     while (attempts < maxAttempts) {
@@ -62,27 +62,21 @@ export default async function handler(req, res) {
       if (answerResponse.ok) {
         answerData = await answerResponse.json();
         
-        // Verifica se tem resposta
         if (answerData.answer) {
-          const currentLength = answerData.answer.length;
+          const currentAnswer = answerData.answer;
           
-          // Se a resposta parou de crescer por 3 verificações consecutivas, considera completa
-          if (currentLength === previousAnswerLength) {
+          // Verifica se a resposta estabilizou (não mudou por 5 segundos)
+          if (currentAnswer === lastAnswer && currentAnswer.length > 300) {
             stableCount++;
-            if (stableCount >= 3 && currentLength > 100) {
-              // Resposta estável e com conteúdo suficiente
+            if (stableCount >= 5) {
+              // Resposta estável por 5 segundos
               break;
             }
           } else {
             stableCount = 0;
-            previousAnswerLength = currentLength;
+            lastAnswer = currentAnswer;
           }
           
-          // Se status for completed E resposta tiver conteúdo substancial
-          if (answerData.status === 'completed' && currentLength > 200) {
-            break;
-          }
-        }
-        
-        if (answerData.status === 'failed') {
-          return res.status
+          // Se status completed E tem conteúdo com listas/dados
+          if (answerData.status === 'completed' && 
+              (currentAnswer.includes('\n1 
