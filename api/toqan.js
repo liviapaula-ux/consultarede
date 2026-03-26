@@ -19,7 +19,7 @@ export default async function handler(req, res) {
       headers: {
         'Content-Type': 'application/json',
         'Accept': '*/*',
-        'Authorization': `Bearer ${process.env.TOQAN_API_KEY}`
+        'X-Api-Key': process.env.TOQAN_API_KEY
       },
       body: JSON.stringify({
         user_message: message
