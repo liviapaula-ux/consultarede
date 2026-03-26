@@ -81,10 +81,19 @@ export default async function handler(req, res) {
       });
     }
 
-    // PASSO 3: Retornar a resposta formatada
+    // PASSO 3: Limpar a resposta (remover reasoning)
+    let respostaLimpa = answerData.answer;
+    
+    // Remove tags <think>...</think> (reasoning)
+    respostaLimpa = respostaLimpa.replace(/<think>[\s\S]*?<\/think>/gi, '');
+    
+    // Remove espaços extras no início
+    respostaLimpa = respostaLimpa.trim();
+
+    // PASSO 4: Retornar a resposta formatada
     return res.status(200).json({
       success: true,
-      message: answerData.answer,
+      message: respostaLimpa,
       conversation_id: conversation_id,
       request_id: request_id,
       status: answerData.status
